@@ -16,7 +16,7 @@ const points: Point[] = [
     { x: 120, y: 350, label: "connect" }, //3
     { x: 180, y: 180 }, // connecting curve //4
     { x: 160, y: 120, label: "these" }, //5
-    { x: 190, y: 350, label: "dots" }, //6 
+    { x: 190, y: 350, label: "dots" }, //6
     { x: 240, y: 250 }, // connecting curve //7
     { x: 260, y: 350, label: "slowly" }, //8
     { x: 290, y: 250, label: "you" }, //9
@@ -51,6 +51,7 @@ const ConnectTheDots: React.FC = () => {
     const [accepted, setAccepted] = useState(false);
     const [isPlaying, setIsPlaying] = useState(false);
     const [hasStarted, setHasStarted] = useState(false);
+    const [isPortrait, setIsPortrait] = useState(false);
 
     const svgRef = useRef<SVGSVGElement>(null);
     const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -69,8 +70,17 @@ const ConnectTheDots: React.FC = () => {
 
     useEffect(() => {
         // No autoplay on mount, handled by handleStart
-        // Remove distinct click listener as well, handleStart is the single entry point
-        // for audio playback now.
+    }, []);
+
+    useEffect(() => {
+        const checkOrientation = () => {
+            const portrait = window.innerHeight > window.innerWidth;
+            const smallDevice = Math.min(window.innerWidth, window.innerHeight) < 768;
+            setIsPortrait(portrait && smallDevice);
+        };
+        checkOrientation();
+        window.addEventListener('resize', checkOrientation);
+        return () => window.removeEventListener('resize', checkOrientation);
     }, []);
 
     const toggleMusic = () => {
@@ -143,9 +153,54 @@ const ConnectTheDots: React.FC = () => {
         setCurrentPathPoints([]);
     };
 
-    const handleDotReached = (pos: { x: number, y: number }) => {
-        // Play success sound or visual feedback here if desired
+    // Touch event handlers for mobile
+    const getTouchPos = (e: React.TouchEvent) => {
+        if (!svgRef.current || !e.touches.length) return { x: 0, y: 0 };
+        const CTM = svgRef.current.getScreenCTM();
+        if (!CTM) return { x: 0, y: 0 };
+        const touch = e.touches[0];
+        return {
+            x: (touch.clientX - CTM.e) / CTM.a,
+            y: (touch.clientY - CTM.f) / CTM.d
+        };
+    };
 
+    const handleTouchStart = (e: React.TouchEvent) => {
+        e.preventDefault();
+        if (completed) return;
+        const pos = getTouchPos(e);
+        setIsDrawing(true);
+        setCurrentPathPoints([{ x: pos.x, y: pos.y }]);
+        if (nextDotIndex === 0) {
+            const startDot = points[0];
+            const dist = Math.hypot(pos.x - startDot.x, pos.y - startDot.y);
+            if (dist < 35) {
+                setNextDotIndex(1);
+            }
+        }
+    };
+
+    const handleTouchMove = (e: React.TouchEvent) => {
+        e.preventDefault();
+        if (completed || !isDrawing) return;
+        const pos = getTouchPos(e);
+        setCurrentPathPoints(prev => [...prev, { x: pos.x, y: pos.y }]);
+        if (nextDotIndex > 0) {
+            const target = points[nextDotIndex];
+            const dist = Math.hypot(pos.x - target.x, pos.y - target.y);
+            if (dist < 20) {
+                handleDotReached(pos);
+            }
+        }
+    };
+
+    const handleTouchEnd = (e: React.TouchEvent) => {
+        e.preventDefault();
+        setIsDrawing(false);
+        setCurrentPathPoints([]);
+    };
+
+    const handleDotReached = (pos: { x: number, y: number }) => {
         // Add current path to completed paths
         const newPath = pointsToPath(currentPathPoints);
         setCompletedPaths(prev => [...prev, newPath]);
@@ -183,143 +238,169 @@ const ConnectTheDots: React.FC = () => {
         }, 250);
     };
 
+    const rotateOverlay = isPortrait ? (
+        <div className="rotate-overlay">
+            <div className="rotate-animation">
+                <div className="rotate-phone-icon">
+                    <div className="phone-screen-inner"></div>
+                    <div className="phone-notch"></div>
+                </div>
+                <svg className="rotate-arrow-svg" viewBox="0 0 80 80" width="60" height="60">
+                    <path d="M 50 12 A 32 32 0 0 1 68 50" fill="none" stroke="#d81b60" strokeWidth="2.5" strokeLinecap="round" />
+                    <polygon points="64,53 72,48 68,57" fill="#d81b60" />
+                </svg>
+            </div>
+            <p className="rotate-text">Gira tu pantalla</p>
+            <p className="rotate-subtext">para una mejor experiencia</p>
+        </div>
+    ) : null;
+
     if (!hasStarted) {
         return (
-            <div className="start-screen" onClick={handleStart}>
-                <div className="start-heart">❤️</div>
-                <div className="start-text">Tap to Open<br />My Love</div>
-            </div>
+            <>
+                {rotateOverlay}
+                <div className="start-screen" onClick={handleStart}>
+                    <div className="start-heart">❤️</div>
+                    <div className="start-text">Tap to Open<br />My Love</div>
+                </div>
+            </>
         );
     }
 
 
     return (
-        <div className="connect-game">
-            {/* Audio Element */}
-            <audio ref={audioRef} src="/lauv_all_4_nothing.mp3" loop autoPlay />
+        <>
+            {rotateOverlay}
+            <div className="connect-game">
+                {/* Audio Element */}
+                <audio ref={audioRef} src="/lauv_all_4_nothing.mp3" loop autoPlay />
 
-            <div className="music-control">
-                <button className="music-btn" onClick={toggleMusic} title="Play/Pause Music">
-                    {isPlaying ? '🔊' : '🔇'}
-                </button>
-            </div>
+                <div className="music-control">
+                    <button className="music-btn" onClick={toggleMusic} title="Play/Pause Music">
+                        {isPlaying ? '🔊' : '🔇'}
+                    </button>
+                </div>
 
-            <h3>Draw to connect the dots...</h3>
-            <div className="canvas-wrapper">
-                <svg
-                    ref={svgRef}
-                    width="100%"
-                    height="100%"
-                    viewBox="0 0 900 500"
-                    preserveAspectRatio="xMidYMid meet"
-                    className="dots-svg"
-                    onMouseDown={handleMouseDown}
-                    onMouseMove={handleMouseMove}
-                    onMouseUp={handleMouseUp}
-                    onMouseLeave={handleMouseUp}
-                >
-                    {/* Completed Paths */}
-                    {completedPaths.map((pathData, i) => (
-                        <path key={i} d={pathData} stroke="#d81b60" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-                    ))}
+                <h3>Draw to connect the dots...</h3>
+                <div className="canvas-wrapper">
+                    <svg
+                        ref={svgRef}
+                        width="100%"
+                        height="100%"
+                        viewBox="0 0 900 500"
+                        preserveAspectRatio="xMidYMid meet"
+                        className="dots-svg"
+                        onMouseDown={handleMouseDown}
+                        onMouseMove={handleMouseMove}
+                        onMouseUp={handleMouseUp}
+                        onMouseLeave={handleMouseUp}
+                        onTouchStart={handleTouchStart}
+                        onTouchMove={handleTouchMove}
+                        onTouchEnd={handleTouchEnd}
+                    >
+                        {/* Completed Paths */}
+                        {completedPaths.map((pathData, i) => (
+                            <path key={i} d={pathData} stroke="#d81b60" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                        ))}
 
-                    {/* Current Path */}
-                    {currentPathPoints.length > 0 && (
-                        <path
-                            d={pointsToPath(currentPathPoints)}
-                            stroke="#d81b60"
-                            strokeWidth="3"
-                            fill="none"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            style={{ opacity: 0.7 }}
-                        />
-                    )}
+                        {/* Current Path */}
+                        {currentPathPoints.length > 0 && (
+                            <path
+                                d={pointsToPath(currentPathPoints)}
+                                stroke="#d81b60"
+                                strokeWidth="3"
+                                fill="none"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                style={{ opacity: 0.7 }}
+                            />
+                        )}
 
-                    {/* Dots */}
-                    {points.map((point, index) => {
-                        const isNext = index === nextDotIndex;
-                        const isVisited = index < nextDotIndex;
+                        {/* Dots */}
+                        {points.map((point, index) => {
+                            const isNext = index === nextDotIndex;
+                            const isVisited = index < nextDotIndex;
 
-                        return (
-                            <g key={index}>
-                                <circle
-                                    cx={point.x}
-                                    cy={point.y}
-                                    r={isNext ? 6 : 4}
-                                    fill={isVisited ? "#d81b60" : (isNext ? "#ff80ab" : "#ccc")}
-                                    className={`dot ${isNext ? 'active-dot' : ''}`}
-                                />
+                            return (
+                                <g key={index}>
+                                    <circle
+                                        cx={point.x}
+                                        cy={point.y}
+                                        r={isNext ? 6 : 4}
+                                        fill={isVisited ? "#d81b60" : (isNext ? "#ff80ab" : "#ccc")}
+                                        className={`dot ${isNext ? 'active-dot' : ''}`}
+                                    />
 
-                                {/* Numbers */}
-                                <text
-                                    x={point.x}
-                                    y={point.y - 12}
-                                    textAnchor="middle"
-                                    fill="#880e4f"
-                                    fontSize="10"
-                                    style={{ opacity: 0.8 }}
-                                >
-                                    {index + 1}
-                                </text>
-
-                                {/* Poem Words */}
-                                {point.label && (
+                                    {/* Numbers */}
                                     <text
                                         x={point.x}
-                                        y={point.y + 18}
+                                        y={point.y - 12}
                                         textAnchor="middle"
-                                        fill="#795548"
-                                        fontSize="9"
-                                        fontStyle="italic"
-                                        fontFamily="serif"
+                                        fill="#880e4f"
+                                        fontSize="10"
+                                        style={{ opacity: 0.8 }}
                                     >
-                                        {point.label}
+                                        {index + 1}
                                     </text>
-                                )}
-                            </g>
-                        );
-                    })}
-                </svg>
 
-                {completed && (
-                    <div className="final-message">
-                        {!accepted ? (
-                            <>
-                                <h1 className="pixel-text">Will you be my<br />valentine?</h1>
-                                <div className="proposal-buttons">
-                                    <button
-                                        className="pixel-btn yes-btn"
-                                        onClick={() => {
-                                            setAccepted(true);
-                                            triggerCelebration();
-                                        }}
-                                    >
-                                        Yes
-                                    </button>
-                                    <button
-                                        className="pixel-btn no-btn"
-                                        disabled
-                                        style={{ position: 'relative' }}
-                                        onMouseEnter={() => {
-                                            // Optional: fun little run away or just static disabled
-                                            // For now just disabled per strict instruction "solo se pueda presionar yes"
-                                        }}
-                                    >
-                                        No
-                                    </button>
+                                    {/* Poem Words */}
+                                    {point.label && (
+                                        <text
+                                            x={point.x}
+                                            y={point.y + 18}
+                                            textAnchor="middle"
+                                            fill="#795548"
+                                            fontSize="9"
+                                            fontStyle="italic"
+                                            fontFamily="serif"
+                                        >
+                                            {point.label}
+                                        </text>
+                                    )}
+                                </g>
+                            );
+                        })}
+                    </svg>
+
+                    {completed && (
+                        <div className="final-message">
+                            {!accepted ? (
+                                <>
+                                    <h1 className="pixel-text">Will you be my<br />valentine?</h1>
+                                    <div className="proposal-buttons">
+                                        <button
+                                            className="pixel-btn yes-btn"
+                                            onClick={() => {
+                                                setAccepted(true);
+                                                triggerCelebration();
+                                            }}
+                                        >
+                                            Yes
+                                        </button>
+                                        <button
+                                            className="pixel-btn no-btn"
+                                            disabled
+                                            style={{ position: 'relative' }}
+                                            onMouseEnter={() => {
+                                                // Optional: fun little run away or just static disabled
+                                                // For now just disabled per strict instruction "solo se pueda presionar yes"
+                                            }}
+                                        >
+                                            No
+                                        </button>
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="final-answer">
+                                    <p>Yeah!</p>
+                                    <p>I know you love me ❤️</p>
                                 </div>
-                            </>
-                        ) : (
-                            <div className="final-answer">
-                                <p>Yeah!</p>
-                                <p>I know you love me ❤️</p>
-                            </div>
-                        )}
-                    </div>
-                )}
+                            )}
+                        </div>
+                    )}
+                </div>
             </div>
-        </div>
+        </>
     );
 };
 

@@ -9,11 +9,13 @@
 .canvas-wrapper {
     position: relative;
     width: 1200px;
+    max-width: 95vw;
     height: 600px;
     margin-top: 20px;
     background: #ffffff;
     border-radius: 12px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    touch-action: none;
 }
 
 .music-control {
@@ -201,4 +203,212 @@
     font-size: 1.5rem;
     text-align: center;
     line-height: 2.5rem;
+}
+
+/* ===== Rotate Screen Overlay ===== */
+.rotate-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: linear-gradient(135deg, #fce4ec 0%, #f8bbd0 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    gap: 20px;
+}
+
+.rotate-animation {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.rotate-phone-icon {
+    width: 48px;
+    height: 78px;
+    border: 3px solid #d81b60;
+    border-radius: 10px;
+    position: relative;
+    background: rgba(255, 255, 255, 0.3);
+    animation: phoneRotate 3s ease-in-out infinite;
+}
+
+.phone-screen-inner {
+    position: absolute;
+    top: 8px;
+    left: 5px;
+    right: 5px;
+    bottom: 14px;
+    border: 1.5px solid rgba(216, 27, 96, 0.3);
+    border-radius: 3px;
+}
+
+.phone-notch {
+    position: absolute;
+    bottom: 5px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 14px;
+    height: 3px;
+    background: #d81b60;
+    border-radius: 2px;
+}
+
+@keyframes phoneRotate {
+    0%, 15% {
+        transform: rotate(0deg);
+    }
+    40%, 60% {
+        transform: rotate(-90deg);
+    }
+    85%, 100% {
+        transform: rotate(0deg);
+    }
+}
+
+.rotate-arrow-svg {
+    position: absolute;
+    top: 0;
+    right: 5px;
+    animation: arrowPulse 3s ease-in-out infinite;
+}
+
+@keyframes arrowPulse {
+    0%, 10% { opacity: 0; transform: scale(0.8); }
+    20%, 50% { opacity: 1; transform: scale(1); }
+    60%, 100% { opacity: 0; transform: scale(0.8); }
+}
+
+.rotate-text {
+    font-family: 'Montserrat', sans-serif;
+    color: #880e4f;
+    font-size: 1.2rem;
+    font-weight: 600;
+    text-align: center;
+    letter-spacing: 1px;
+    margin: 0;
+}
+
+.rotate-subtext {
+    font-family: 'Montserrat', sans-serif;
+    color: #ad1457;
+    font-size: 0.85rem;
+    text-align: center;
+    opacity: 0.7;
+    margin: 0;
+}
+
+/* ===== Responsive: Tablet / Small Desktop ===== */
+@media (max-width: 1280px) {
+    .canvas-wrapper {
+        height: auto;
+        aspect-ratio: 2 / 1;
+        max-height: calc(100vh - 100px);
+    }
+}
+
+/* ===== Responsive: Mobile Landscape ===== */
+@media (max-width: 932px) and (orientation: landscape) {
+    .connect-game h3 {
+        font-size: 0.8rem;
+        margin: 3px 0;
+    }
+
+    .canvas-wrapper {
+        width: auto;
+        height: calc(100vh - 45px);
+        aspect-ratio: 9 / 5;
+        max-width: 95vw;
+        margin-top: 5px;
+        border-radius: 8px;
+    }
+
+    .music-control {
+        top: 10px;
+        right: 10px;
+    }
+
+    .music-btn {
+        width: 32px;
+        height: 32px;
+        font-size: 0.9rem;
+    }
+
+    .final-message {
+        padding: 15px 20px;
+        border-radius: 12px;
+    }
+
+    .final-message h1 {
+        font-size: 2.5rem;
+    }
+
+    .pixel-text {
+        font-size: 0.65rem;
+        line-height: 1.4rem;
+        margin-bottom: 10px;
+    }
+
+    .pixel-btn {
+        font-size: 0.5rem;
+        padding: 8px 15px;
+        border-width: 3px;
+        box-shadow: 3px 3px 0px #000;
+    }
+
+    .final-answer {
+        font-size: 0.7rem;
+        line-height: 1.3rem;
+    }
+
+    .proposal-buttons {
+        gap: 12px;
+    }
+}
+
+/* ===== Responsive: Small Mobile Landscape ===== */
+@media (max-height: 400px) and (orientation: landscape) {
+    .connect-game h3 {
+        font-size: 0.7rem;
+        margin: 2px 0;
+    }
+
+    .canvas-wrapper {
+        height: calc(100vh - 35px);
+        margin-top: 3px;
+    }
+
+    .final-message {
+        padding: 10px 15px;
+    }
+
+    .pixel-text {
+        font-size: 0.55rem;
+        line-height: 1.2rem;
+        margin-bottom: 8px;
+    }
+
+    .pixel-btn {
+        font-size: 0.45rem;
+        padding: 6px 12px;
+    }
+}
+
+/* ===== Responsive: Mobile Portrait (start screen) ===== */
+@media (max-width: 480px) {
+    .start-heart {
+        font-size: 3.5rem;
+    }
+
+    .start-text {
+        font-size: 1rem;
+        line-height: 2rem;
+    }
 }
