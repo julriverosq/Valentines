@@ -18,30 +18,47 @@
     touch-action: none;
 }
 
-.music-control {
+.volume-control {
     position: absolute;
     top: 20px;
     right: 20px;
     z-index: 100;
-}
-
-.music-btn {
-    background: white;
-    border: 2px solid #5d4037;
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    font-size: 1.2rem;
-    cursor: pointer;
     display: flex;
     align-items: center;
-    justify-content: center;
-    transition: transform 0.2s;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    gap: 6px;
+    background: rgba(252, 228, 236, 0.9);
+    padding: 8px 12px;
+    border-radius: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
-.music-btn:hover {
-    transform: scale(1.1);
+.volume-icon {
+    flex-shrink: 0;
+}
+
+.volume-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+    height: 22px;
+}
+
+.volume-bar {
+    width: 8px;
+    border: none;
+    border-radius: 3px;
+    background: #f8bbd0;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    padding: 0;
+}
+
+.volume-bar.active {
+    background: #d81b60;
+}
+
+.volume-bar:hover {
+    transform: scaleY(1.2);
 }
 
 .dots-svg {
@@ -330,15 +347,18 @@
         border-radius: 8px;
     }
 
-    .music-control {
+    .volume-control {
         top: 10px;
         right: 10px;
+        padding: 5px 8px;
     }
 
-    .music-btn {
-        width: 32px;
-        height: 32px;
-        font-size: 0.9rem;
+    .volume-bars {
+        height: 18px;
+    }
+
+    .volume-bar {
+        width: 6px;
     }
 
     .final-message {
